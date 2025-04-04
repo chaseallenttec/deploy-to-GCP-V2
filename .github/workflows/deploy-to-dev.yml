@@ -19,7 +19,10 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
 
       - name: Adding private SSH key to ssh-agent
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.GCP_DEV_SSH_PRIVATE_KEY }}"
 
       - name: Install Go
