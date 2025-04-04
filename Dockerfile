@@ -2,7 +2,7 @@
 FROM golang:1.23 as builder
 
 WORKDIR /go/src/app
-COPY eva-api-server/go-files .
+# COPY eva-api-server/go-files .
 
 RUN go mod download
 RUN go build -o /go/bin/eva-api-server-go
