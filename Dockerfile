@@ -14,7 +14,7 @@ RUN yum -y update
 RUN tar -C /usr/local -xzf /etc/eva/eva-api-server/go/go1.23.1.linux-amd64.tar.gz &&  \
     rm /etc/eva/eva-api-server/go/go1.23.1.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
-COPY eva-api-server/go-files /etc/eva/eva-api-server/go-files
+# COPY eva-api-server/go-files /etc/eva/eva-api-server/go-files
 WORKDIR /etc/eva/eva-api-server/go-files
 RUN go mod download
 RUN go build -o /etc/eva/eva-api-server/eva-api-server-go
