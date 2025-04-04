@@ -1,24 +1,26 @@
+# Build stage
+FROM golang:1.23 as builder
+
+WORKDIR /go/src/app
+COPY eva-api-server/go-files .
+
+RUN go mod download
+RUN go build -o /go/bin/eva-api-server-go
+
+# Final stage
 FROM almalinux:latest
 
-RUN dnf update -y
+# Install dependencies
+RUN yum -y update && \
+    yum install -y epel-release curl gcc openssl-devel bzip2-devel libffi-devel \
+    nano nmap tcpdump net-tools htop supervisor wget make postgresql-devel python-devel \
+    monit && \
+    yum clean all
 
-RUN yum -y update
-#needed for additional packages like supervisor, htop, etc
-RUN yum install epel-release -y
-#install remaining packages needed
-RUN yum install curl --allowerasing -y
-RUN yum -y install gcc openssl-devel bzip2-devel libffi-devel nano nmap tcpdump net-tools htop supervisor wget make postgresql-devel python-devel monit && yum clean all
-RUN yum -y update
+# Copy the Go binary from the builder stage
+COPY --from=builder /go/bin/eva-api-server-go /usr/local/bin/eva-api-server-go
 
-# Install Go
-RUN tar -C /usr/local -xzf /etc/eva/eva-api-server/go/go1.23.1.linux-amd64.tar.gz &&  \
-    rm /etc/eva/eva-api-server/go/go1.23.1.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
-# COPY eva-api-server/go-files /etc/eva/eva-api-server/go-files
-WORKDIR /etc/eva/eva-api-server/go-files
-RUN go mod download
-RUN go build -o /etc/eva/eva-api-server/eva-api-server-go
+# Set the working directory for the application
+WORKDIR /etc/eva/eva-api-server
 
-WORKDIR .
-
-CMD ["sh", "-c", "cd /etc/eva/eva-api-server && /etc/eva/eva-api-server/startup.sh"]
+CMD ["/usr/local/bin/eva-api-server-go", "startup.sh"]
