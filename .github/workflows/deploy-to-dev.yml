@@ -18,10 +18,14 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - name: Set up SSH key
+      - name: Adding private SSH key to ssh-agent
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          echo "${{ secrets.GCP_DEV_SSH_PRIVATE_KEY }}" > gcp_key
-          chmod 600 gcp_key
+          mkdir -p ~/.ssh
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-add - <<< "${{ secrets.GCP_DEV_SSH_PRIVATE_KEY }}"
 
       - name: Install Go
         uses: actions/setup-go@v4
@@ -29,15 +33,23 @@ jobs:
           go-version: 1.22
 
       - name: Build Go project
-        run: GOOS=linux GOARCH=amd64 go build -o addi-server
+        run: GOOS=linux GOARCH=amd64 go build -o my-binary
 
-      - name: Deploy binary to GCP VM
+      - name: scp binary to GCE and apply latest version
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          rsync -avz -e "ssh -i gcp_key -o StrictHostKeyChecking=no" ./addi-server ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }}:/home/user/addi-server
-
-      - name: Restart ADDI service on VM
-        run: |
-          ssh -i gcp_key -o StrictHostKeyChecking=no ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }} "sudo systemctl restart addi.service"
+          scp  -o StrictHostKeyChecking=no -r my-binary ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }}:./my-binary.new
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }} << 'ENDSSH'
+            echo "** restarting service tof apply new version **"
+            sudo service my-binary stop
+            echo "** service stopped **"
+            mv my-binary.new my-binary
+            chmod +x my-binary
+            sudo service my-binary start
+            echo "** service started **"
+            ps -ef |grep my-binary
+          ENDSSH          
 
       - name: Clean up
         run: rm -f gcp_key addi-server
