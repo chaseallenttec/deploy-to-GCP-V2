@@ -1,0 +1,43 @@
+name: Deploy to Dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Set up SSH key
+        run: |
+          echo "${{ secrets.GCP_DEV_SSH_PRIVATE_KEY }}" > gcp_key
+          chmod 600 gcp_key
+
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.22
+
+      - name: Build Go project
+        run: GOOS=linux GOARCH=amd64 go build -o addi-server
+
+      - name: Deploy binary to GCP VM
+        run: |
+          rsync -avz -e "ssh -i gcp_key -o StrictHostKeyChecking=no" ./addi-server ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }}:/home/user/addi-server
+
+      - name: Restart ADDI service on VM
+        run: |
+          ssh -i gcp_key -o StrictHostKeyChecking=no ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }} "sudo systemctl restart addi.service"
+
+      - name: Clean up
+        run: rm -f gcp_key addi-server
