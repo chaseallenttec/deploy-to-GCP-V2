@@ -9,35 +9,41 @@ on:
         default: "main"
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          ref: ${{ github.event.inputs.branch }}
+          go-version: '1.23'
 
-      - name: Set up SSH key
-        run: |
-          echo "${{ secrets.GCP_DEV_SSH_PRIVATE_KEY }}" > gcp_key
-          chmod 600 gcp_key
-
-      - name: Install Go
-        uses: actions/setup-go@v4
+      - name: Set up Google Cloud credentials
+        uses: google-github-actions/setup-gcloud@v3
         with:
-          go-version: 1.22
+          project_id: ${{ secrets.GCP_PROJECT }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Build Go project
-        run: GOOS=linux GOARCH=amd64 go build -o addi-server
-
-      - name: Deploy binary to GCP VM
+      - name: Authenticate to Google Cloud
         run: |
-          rsync -avz -e "ssh -i gcp_key -o StrictHostKeyChecking=no" ./addi-server ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }}:/home/user/addi-server
+          echo "${{ secrets.GCP_SA_KEY }}" > "${HOME}/gcloud-service-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+          gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
 
-      - name: Restart ADDI service on VM
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
         run: |
-          ssh -i gcp_key -o StrictHostKeyChecking=no ${{ secrets.GCP_DEV_VM_USER }}@${{ secrets.GCP_DEV_VM_IP }} "sudo systemctl restart addi.service"
+          docker build -t us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/addi-demo-ar/myapp:${{ github.sha }} .
 
-      - name: Clean up
-        run: rm -f gcp_key addi-server
+      - name: Configure Docker to authenticate with Google Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_PROJECT }}.appspot.com
+
+      - name: Push Docker image to Artifact Registry
+        run: |
+          docker push us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/addi-demo-ar/myapp:${{ github.sha }}
