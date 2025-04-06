@@ -16,7 +16,7 @@ RUN wget https://go.dev/dl/go1.23.1.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz &&  \
     rm go1.23.1.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
-COPY ./deploy-to-GCP-V2 /etc/eva/eva-api-server/go-files
+COPY . /etc/eva/eva-api-server/go-files
 WORKDIR /etc/eva/eva-api-server/go-files
 RUN go mod download
 RUN go build -o /etc/eva/eva-api-server/eva-api-server-go
