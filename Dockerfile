@@ -11,13 +11,12 @@ RUN yum -y install gcc openssl-devel bzip2-devel libffi-devel nano nmap tcpdump 
 RUN yum -y update
 
 # Install Go
-RUN mkdir -p /etc/eva/eva-api-server/go
-RUN mkdir -p /etc/eva/eva-api-server/go-files
-RUN wget -O /etc/eva/eva-api-server/go https://dl.google.com/go/go1.23.6.linux-amd64.tar.gz
-RUN tar -C /usr/local -xzf /etc/eva/eva-api-server/go/go1.23.1.linux-amd64.tar.gz &&  \
-    rm /etc/eva/eva-api-server/go/go1.23.1.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin"
-COPY /etc/eva/eva-api-server/go /etc/eva/eva-api-server/go-files
+RUN mkdir /etc/eva/eva-api-server/go-files
+RUN wget https://go.dev/dl/go1.23.1.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz &&  \
+    rm go1.23.1.linux-amd64.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+COPY ./deploy-to-GCP-V2 /etc/eva/eva-api-server/go-files
 WORKDIR /etc/eva/eva-api-server/go-files
 RUN go mod download
 RUN go build -o /etc/eva/eva-api-server/eva-api-server-go
