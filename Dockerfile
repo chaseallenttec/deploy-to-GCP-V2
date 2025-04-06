@@ -11,7 +11,7 @@ RUN yum -y install gcc openssl-devel bzip2-devel libffi-devel nano nmap tcpdump 
 RUN yum -y update
 
 # Install Go
-RUN mkdir /etc/eva/eva-api-server/go-files
+RUN mkdir -p /etc/eva/eva-api-server/go-files
 RUN wget https://go.dev/dl/go1.23.1.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz &&  \
     rm go1.23.1.linux-amd64.tar.gz
