@@ -8,6 +8,10 @@ on:
         required: true
         default: "main"
 
+permissions:
+  id-token: write   # Allows GitHub Actions to create an ID token for WIF
+  contents: read    # Allows access to repository contents
+
 jobs:
   build:
     runs-on: ubuntu-latest
