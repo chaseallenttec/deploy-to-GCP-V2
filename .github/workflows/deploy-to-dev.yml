@@ -62,4 +62,5 @@ jobs:
           service: myapp
           region: ${{ env.REGION }}
           image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/myapp:latest
+          project_id: addi-demo-bdbf
           flags: "--service-account=github-addi-nonprod@central-workload-identity-f740.iam.gserviceaccount.com --ingress=internal-and-cloud-load-balancing"
