@@ -13,7 +13,7 @@ env:
   GAR_LOCATION: us-west1
   REGION: us-west1
   REPOSITORY: addi-demo-ar
-  WORKLOAD_IDENTITY_PROVIDER: "projects/addi-demo-bdbf/locations/global/workloadIdentityPools/github/providers/github"
+  WORKLOAD_IDENTITY_PROVIDER: "projects/482658006474/locations/global/workloadIdentityPools/github/providers/github"
   SERVICE_ACCOUNT: github-addi-nonprod@central-workload-identity-f740.iam.gserviceaccount.com
   ENV_NAME: prod
 
