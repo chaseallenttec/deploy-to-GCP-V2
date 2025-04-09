@@ -41,7 +41,7 @@ jobs:
           service_account: ${{ env.SERVICE_ACCOUNT }}
           access_token_lifetime: 300s
 
-      - id: "SSH to VM and run script"
+      - id: ssh
         name: SSH into VM and run pull latest Docker image script
         run: |
           echo "Setting up SSH connection to VM"
